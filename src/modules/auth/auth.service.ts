@@ -62,8 +62,8 @@ export class AuthService {
 
     if (!findUser) throw new CustomException(ERROR_MSG.INVALID_CREDENTIALS);
 
-    if (!findUser.isVerified) {
-      throw new CustomException('Verify your email');
+    if (!findUser.is_verified) {
+      throw new CustomException(ERROR_MSG.VERIFY_EMAIL);
     }
 
     const isPasswordValid = await bcryptCompare(
@@ -87,9 +87,8 @@ export class AuthService {
         id: findUser.id,
         name: findUser.name,
         email: findUser.email,
-        isVerified: findUser.isVerified,
-        createdAt: findUser.createdAt,
-        updatedAt: findUser.updatedAt,
+        isVerified: findUser.is_verified,
+        createdAt: findUser.created_at,
       },
     });
   }
@@ -100,14 +99,15 @@ export class AuthService {
     const user = await this.userRepository.findOne({
       where: { email: payload.email },
     });
-    if (!user) throw new CustomException('User not found');
-    if (user.isVerified) return successResponse('Already verified');
+    if (!user) throw new CustomException(ERROR_MSG.USER_NOT_FOUND);
+    if (user.is_verified)
+      return successResponse(SUCCESS_MSG.ACCOUNT_ALREADY_VERIFIED);
 
     await this.jwtService.tokenVerifier(payload.token);
 
-    user.isVerified = true;
+    user.is_verified = true;
     await this.userRepository.save(user);
 
-    return successResponse('Account verified');
+    return successResponse(SUCCESS_MSG.ACCOUNT_VERIFIED);
   }
 }

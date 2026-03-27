@@ -1,17 +1,8 @@
-import { IsEmail } from 'class-validator';
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { AbstractEntityClass } from 'src/common/entity/abstract-class.entity';
+import { Column, Entity } from 'typeorm';
 
 @Entity()
-export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class User extends AbstractEntityClass {
   @Column()
   name: string;
 
@@ -22,14 +13,5 @@ export class User {
   password: string;
 
   @Column({ default: false })
-  isDeleted: boolean;
-
-  @Column({ default: false })
-  isVerified: boolean;
-
-  @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt: Date;
+  is_verified: boolean;
 }

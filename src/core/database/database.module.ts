@@ -13,7 +13,7 @@ import { OrmService } from './database.service';
         type: 'postgres',
         url: configService.get<string>('DB_URL'),
         entities,
-        synchronize: true,
+        synchronize: false,
       }),
       inject: [ConfigService],
     }),
