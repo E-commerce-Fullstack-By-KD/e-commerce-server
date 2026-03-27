@@ -87,6 +87,7 @@ export class AuthService {
         id: findUser.id,
         name: findUser.name,
         email: findUser.email,
+        role: findUser.role,
         isVerified: findUser.is_verified,
         createdAt: findUser.created_at,
       },
