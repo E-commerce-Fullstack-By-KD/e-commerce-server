@@ -7,6 +7,7 @@ import {
   decryptData,
   encryptData,
   successResponse,
+  successResponseWithResult,
 } from 'src/common/utils/helper';
 import { OrmService } from 'src/core/database/database.service';
 import { Repository } from 'typeorm';
@@ -47,7 +48,7 @@ export class AuthService {
     );
 
     await this.userRepository.save(user);
-    await this.mailService.sendVerificationEmail(user.email, token);
+    this.mailService.sendVerificationEmail(user.email, token);
 
     return successResponse(SUCCESS_MSG.REGISTERED);
   }
@@ -80,7 +81,17 @@ export class AuthService {
 
     const jwtToken = await this.jwtService.tokenGenerator(payload, '1d');
 
-    return { jwtToken };
+    return successResponseWithResult(SUCCESS_MSG.LOG_IN, {
+      jwtToken,
+      user: {
+        id: findUser.id,
+        name: findUser.name,
+        email: findUser.email,
+        isVerified: findUser.isVerified,
+        createdAt: findUser.createdAt,
+        updatedAt: findUser.updatedAt,
+      },
+    });
   }
 
   async verifyUser(body: string) {

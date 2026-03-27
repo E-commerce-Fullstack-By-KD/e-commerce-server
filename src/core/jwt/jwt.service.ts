@@ -15,6 +15,10 @@ export class JwtService {
   }
 
   async tokenVerifier(token: string): Promise<Record<string, any>> {
-    return this.jwtService.verifyAsync(token);
+    try {
+      return this.jwtService.verifyAsync(token);
+    } catch (error) {
+      throw new Error('Invalid token');
+    }
   }
 }

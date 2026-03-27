@@ -6,12 +6,13 @@ export class MailService {
   constructor(private mailerService: MailerService) {}
 
   async sendVerificationEmail(email: string, token: string) {
-    const encodedToken = encodeURIComponent(token);
-    const url = `${process.env.APP_URL}/auth/verify?token=${encodedToken}`;
-    await this.mailerService.sendMail({
-      to: email,
-      subject: 'Verify your account',
-      html: `<!doctype html>
+    try {
+      const encodedToken = encodeURIComponent(token);
+      const url = `${process.env.APP_URL}/verify?token=${encodedToken}`;
+      await this.mailerService.sendMail({
+        to: email,
+        subject: 'Verify your account',
+        html: `<!doctype html>
              <html lang="en">
                <head>
                  <meta charset="utf-8" />
@@ -60,6 +61,10 @@ export class MailService {
                  </table>
                </body>
              </html>`,
-    });
+      });
+    } catch (error) {
+      console.log('Error while Sending Verification Email', error);
+      throw new Error('Failed to send verification email');
+    }
   }
 }

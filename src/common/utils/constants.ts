@@ -21,6 +21,7 @@ const MESSAGES = {
     FORBIDDEN: 'Forbidden',
     INTERNAL_SERVER_ERROR: 'Internal server error',
     INVALID_TOKEN: 'Token Expired',
+    
   },
 } as const;
 

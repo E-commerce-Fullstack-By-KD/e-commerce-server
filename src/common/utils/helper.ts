@@ -12,6 +12,14 @@ export const successResponse = <T>(message: string) =>
     message,
   }) as const;
 
+export const successResponseWithResult = <T>(message: string, result: T) =>
+  ({
+    status_code: HttpStatus.OK,
+    error: false,
+    message,
+    result
+  }) as const;
+
 export function encryptData(plaintext: string): string {
   return CryptoJS.AES.encrypt(plaintext, secret).toString();
 }

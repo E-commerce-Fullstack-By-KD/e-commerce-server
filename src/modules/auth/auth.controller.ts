@@ -18,6 +18,7 @@ export class AuthController {
 
   @Get('verify')
   async verify(@Query('token') token: string) {
+    console.log('Api Called');
     return this.authService.verifyUser(decodeURIComponent(token));
   }
 }
