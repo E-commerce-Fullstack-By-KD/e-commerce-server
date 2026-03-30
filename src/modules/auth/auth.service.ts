@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { User } from 'src/core/database/entity';
-import { CustomException } from 'src/common/exceptions/custom.exception';
+import {
+  CustomException,
+  ResourceNotFound,
+} from 'src/common/exceptions/custom.exception';
 import {
   bcryptCompare,
   bcryptHash,
@@ -14,7 +17,11 @@ import { Repository } from 'typeorm';
 import { LoginDto, SignupDto } from './dto';
 import { MailService } from 'src/core/mailer/mailer.service';
 import { JwtService } from 'src/core/jwt/jwt.service';
-import { ERROR_MSG, SUCCESS_MSG } from 'src/common/utils/constants';
+import {
+  ERROR_MSG,
+  RESOURCE_NAMES,
+  SUCCESS_MSG,
+} from 'src/common/utils/constants';
 
 @Injectable()
 export class AuthService {
@@ -75,7 +82,7 @@ export class AuthService {
       throw new CustomException(ERROR_MSG.INVALID_CREDENTIALS);
 
     const payload = {
-      sub: findUser.id,
+      id: findUser.id,
       email: findUser.email,
     };
 
@@ -110,5 +117,19 @@ export class AuthService {
     await this.userRepository.save(user);
 
     return successResponse(SUCCESS_MSG.ACCOUNT_VERIFIED);
+  }
+
+  async verifyToken(token: string): Promise<Partial<User>> {
+    const { id } = await this.jwtService.tokenVerifier(token);
+    return this.findById(id);
+  }
+
+  private async findById(id: number): Promise<Partial<User>> {
+    const user = await this.userRepository.findOne({
+      where: { id, is_deleted: false },
+      select: { id: true, name: true, email: true },
+    });
+    if (!user) throw new ResourceNotFound(RESOURCE_NAMES.USER);
+    return user;
   }
 }

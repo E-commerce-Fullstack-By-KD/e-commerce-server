@@ -1,10 +1,10 @@
 export enum ProductStatus {
-    ACTIVE = 'ACTIVE',
-    INACTIVE = 'INACTIVE',
-    DRAFT = 'DRAFT',
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  DRAFT = 'DRAFT',
 }
 
 export enum UserRole {
-    ADMIN = 'admin',
-    USER  = 'user',
+  ADMIN = 'admin',
+  USER = 'user',
 }

@@ -12,6 +12,17 @@ export class ResourceNotFound extends HttpException {
   }
 }
 
+export class ResourceFound extends HttpException {
+  constructor(resourceName: string, resourceId?: string) {
+    super(
+      resourceId
+        ? `${resourceName} with ${resourceId} already exists`
+        : `${resourceName} already exists`,
+      HttpStatus.NOT_FOUND,
+    );
+  }
+}
+
 export class Unauthorized extends HttpException {
   constructor() {
     super(ERROR_MSG.UNAUTHORIZED, HttpStatus.UNAUTHORIZED);

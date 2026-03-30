@@ -1,5 +1,12 @@
 import { AbstractEntityClass } from 'src/common/entity/abstract-class.entity';
-import { Column, Entity, ManyToMany, ManyToOne } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+} from 'typeorm';
 import { User } from './user.entity';
 import { Collection } from './collection.entity';
 import { ProductStatus } from 'src/common/enum';
@@ -11,6 +18,9 @@ export class Product extends AbstractEntityClass {
 
   @Column({ unique: true })
   sku: string;
+
+  @Column({ nullable: true })
+  description: string;
 
   @Column('text', { array: true, nullable: true })
   image_url: string[];
@@ -31,9 +41,27 @@ export class Product extends AbstractEntityClass {
   @Column({ default: 0 })
   stock: number;
 
-  @ManyToOne(() => User)
-  user_id: User;
+  /**
+   * The admin user who created this product.
+   * Property name is `created_by`; DB FK column is `user_id`.
+   */
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'user_id' })
+  created_by: User;
 
-  @ManyToMany(() => Collection)
-  collections: Collection;
+  /**
+   * Many-to-many with Collection.
+   * @JoinTable lives here (owning side) — TypeORM auto-creates
+   * the `product_collection(product_id, collection_id)` pivot table.
+   */
+  @ManyToMany(() => Collection, (collection) => collection.products, {
+    cascade: true,
+    eager: false,
+  })
+  @JoinTable({
+    name: 'product_collection',
+    joinColumn: { name: 'product_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'collection_id', referencedColumnName: 'id' },
+  })
+  collections: Collection[];
 }

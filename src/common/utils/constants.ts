@@ -10,7 +10,6 @@ const MESSAGES = {
     FETCHED: 'Fetched successfully',
     ACCOUNT_ALREADY_VERIFIED: 'Account is already verified',
     ACCOUNT_VERIFIED: 'Account verified successfully',
-    COLLECTION_EXISTS: 'Collection already exists',
   },
   ERROR_MSG: {
     JSON_WEB_TOKEN_ERROR: 'JsonWebTokenError',
@@ -28,7 +27,14 @@ const MESSAGES = {
     INVALID_TOKEN: 'Token Expired',
 
     RECORD_NOT_FOUND: 'Record not found',
-   },
+  },
 } as const;
 
+export const RESOURCE_NAMES = {
+  COLLECTION: 'Collections',
+  PRODUCT:'Product',
+  USER:'User'
+};
+
 export const { SUCCESS_MSG, ERROR_MSG } = MESSAGES;
+  
