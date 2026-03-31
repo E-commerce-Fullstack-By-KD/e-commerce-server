@@ -26,7 +26,7 @@ export class ProductService {
   async create(userId: number, createProductDto: CreateProductDto) {
     // Reject if SKU already exists (even soft-deleted — SKU must be globally unique)
     const existing = await this.productRepository.findOne({
-      where: { sku: createProductDto.sku },
+      where: { sku: createProductDto.sku, is_deleted: false },
     });
     if (existing) throw new ResourceFound(RESOURCE_NAMES.PRODUCT);
 

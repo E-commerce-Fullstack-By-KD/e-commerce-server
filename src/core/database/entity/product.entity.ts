@@ -11,6 +11,13 @@ import { User } from './user.entity';
 import { Collection } from './collection.entity';
 import { ProductStatus } from 'src/common/enum';
 
+const decimalToNumber = {
+  to: (value?: number | null): string | null =>
+    value === null || value === undefined ? null : value.toFixed(2),
+  from: (value?: string | null): number | null =>
+    value === null || value === undefined ? null : Number(value),
+};
+
 @Entity()
 export class Product extends AbstractEntityClass {
   @Column()
@@ -25,10 +32,10 @@ export class Product extends AbstractEntityClass {
   @Column('text', { array: true, nullable: true })
   image_url: string[];
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', { precision: 10, scale: 2, transformer: decimalToNumber })
   list_price: number;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', { precision: 10, scale: 2, transformer: decimalToNumber })
   offer_price: number;
 
   @Column({
