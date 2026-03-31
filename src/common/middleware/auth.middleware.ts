@@ -7,12 +7,10 @@ import { AuthService } from 'src/modules/auth/auth.service';
 export class AuthMiddleware implements NestMiddleware {
   constructor(private readonly authService: AuthService) {}
   async use(req: Request, res: Response, next: NextFunction) {
-    const authHeader = req.headers['authorization'];
-    console.log('authHeader: ', authHeader);
+    const authHeader = req.headers['authorization']
     if (!authHeader) throw new Unauthorized();
 
     const token = authHeader.split(' ')[1];
-    console.log(token, 'token');
     const user = await this.authService.verifyToken(token);
     if (!user) throw new Unauthorized();
 
