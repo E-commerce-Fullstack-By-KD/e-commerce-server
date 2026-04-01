@@ -23,22 +23,22 @@ export class ProductController {
   }
 
   @Get()
-  findAll(@CurrentUser() user: AuthUser) {
-    return this.productService.findAll(user.id);
+  findAll() {
+    return this.productService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.productService.findOne(+id, user.id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.productService.findOne(id);
   }
 
   @Put(':id')
   update(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateProductDto: UpdateProductDto,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.productService.update(+id, updateProductDto, user.id);
+    return this.productService.update(id, updateProductDto, user.id);
   }
 
   @Delete(':id')

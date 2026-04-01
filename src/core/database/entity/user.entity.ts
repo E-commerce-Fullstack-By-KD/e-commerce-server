@@ -18,4 +18,7 @@ export class User extends AbstractEntityClass {
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
+
+  @Column({ default: false })
+  is_deleted: boolean;
 }

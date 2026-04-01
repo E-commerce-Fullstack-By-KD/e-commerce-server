@@ -3,7 +3,11 @@ import { CreateCollectionDto, UpdateCollectionDto } from './dto/collection.dto';
 import { Repository } from 'typeorm';
 import { OrmService } from 'src/core/database/database.service';
 import { Collection } from 'src/core/database/entity';
-import { ERROR_MSG, RESOURCE_NAMES, SUCCESS_MSG } from 'src/common/utils/constants';
+import {
+  ERROR_MSG,
+  RESOURCE_NAMES,
+  SUCCESS_MSG,
+} from 'src/common/utils/constants';
 import {
   successResponse,
   successResponseWithResult,
@@ -66,7 +70,7 @@ export class CollectionService {
   // ── private ──────────────────────────────────────────────────────────────
   private async checkCollectionExists(id: number) {
     const existing = await this.collectionRepository.findOne({
-      where: { id, is_deleted: false },   // never operate on deleted records
+      where: { id, is_deleted: false }, // never operate on deleted records
       select: ['id', 'name', 'is_deleted'],
     });
     if (!existing) throw new CustomException(ERROR_MSG.RECORD_NOT_FOUND);
