@@ -7,6 +7,8 @@ export class Collection extends AbstractEntityClass {
   @Column()
   name: string;
 
+  @Column({ default: false })
+  is_deleted: boolean;
   /**
    * Inverse side of Product.collections.
    * No @JoinTable here — it lives on the owning side (Product).

@@ -32,9 +32,8 @@ const MESSAGES = {
 
 export const RESOURCE_NAMES = {
   COLLECTION: 'Collections',
-  PRODUCT:'Product',
-  USER:'User'
+  PRODUCT: 'Product',
+  USER: 'User',
 };
 
 export const { SUCCESS_MSG, ERROR_MSG } = MESSAGES;
-  

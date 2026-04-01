@@ -48,17 +48,17 @@ export class ProductService {
     return successResponseWithResult(SUCCESS_MSG.CREATED, { product: saved });
   }
 
-  async findAll(userId: number) {
+  async findAll() {
     const products = await this.productRepository.find({
-      where: { created_by: { id: userId }, is_deleted: false },
+      where: { is_deleted: false },
       relations: ['collections'],
       order: { created_at: 'DESC' },
     });
     return successResponseWithResult(SUCCESS_MSG.FETCHED, { products });
   }
 
-  async findOne(id: number, userId: number) {
-    const product = await this.checkProductExists(id, userId);
+  async findOne(id: number) {
+    const product = await this.checkProductExists(id);
     return successResponseWithResult(SUCCESS_MSG.FETCHED, { product });
   }
 
@@ -89,9 +89,13 @@ export class ProductService {
   }
 
   // ── private ──────────────────────────────────────────────────────────────
-  private async checkProductExists(id: number, userId: number) {
+  private async checkProductExists(id: number, userId?: number) {
     const product = await this.productRepository.findOne({
-      where: { id, created_by: { id: userId }, is_deleted: false },
+      where: {
+        id,
+        ...(userId && { created_by: { id: userId } }),
+        is_deleted: false,
+      },
       relations: ['collections'],
     });
     if (!product) throw new ResourceNotFound(RESOURCE_NAMES.PRODUCT);

@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { CoreModule } from './core/core.module';
-import { IndexModule } from './modules/index.modules';
+import { IndexModule } from './modules/index.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 

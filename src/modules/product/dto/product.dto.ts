@@ -27,9 +27,10 @@ export class CreateProductDto {
   @Min(0)
   list_price: number;
 
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  offer_price: number;
+  offer_price?: number;
 
   @IsNumber()
   @Min(0)

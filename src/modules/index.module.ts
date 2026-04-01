@@ -3,15 +3,17 @@ import { AuthModule } from './auth/auth.module';
 import { AuthMiddleware } from 'src/common/middleware/auth.middleware';
 import { ProductModule } from './product/product.module';
 import { CollectionModule } from './collection/collection.module';
+import { PUBLIC_ROUTES } from 'src/common/utils/public.routes';
+import { CartModule } from './cart/cart.module';
 
 @Module({
-  imports: [AuthModule, CollectionModule, ProductModule],
+  imports: [AuthModule, CollectionModule, ProductModule, CartModule],
 })
 export class IndexModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(AuthMiddleware)
-      .exclude('auth/login', 'auth/signup', 'uploads/*path')
+      .exclude(...PUBLIC_ROUTES)
       .forRoutes('*');
   }
 }
