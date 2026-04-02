@@ -35,7 +35,12 @@ export class Product extends AbstractEntityClass {
   @Column('decimal', { precision: 10, scale: 2, transformer: decimalToNumber })
   list_price: number;
 
-  @Column('decimal', { precision: 10, scale: 2, nullable: true, transformer: decimalToNumber })
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    transformer: decimalToNumber,
+  })
   offer_price: number | null;
 
   @Column({

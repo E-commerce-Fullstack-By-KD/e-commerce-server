@@ -31,4 +31,8 @@ export const PUBLIC_ROUTES: RouteInfo[] = [
     path: 'collection/findAll',
     method: RequestMethod.GET,
   },
+  {
+    path: 'payments/verify',
+    method: RequestMethod.POST,
+  },
 ];
