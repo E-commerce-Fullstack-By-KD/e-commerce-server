@@ -10,6 +10,8 @@ const MESSAGES = {
     FETCHED: 'Fetched successfully',
     ACCOUNT_ALREADY_VERIFIED: 'Account is already verified',
     ACCOUNT_VERIFIED: 'Account verified successfully',
+    ORDER_CREATED: 'Order created successfully',
+  
   },
   ERROR_MSG: {
     JSON_WEB_TOKEN_ERROR: 'JsonWebTokenError',
@@ -27,6 +29,7 @@ const MESSAGES = {
     INVALID_TOKEN: 'Token Expired',
 
     RECORD_NOT_FOUND: 'Record not found',
+    PAYMENT_VERIFICATION_FAILED: 'Payment verification failed',
   },
 } as const;
 
