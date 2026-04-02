@@ -5,9 +5,10 @@ import { ProductModule } from './product/product.module';
 import { CollectionModule } from './collection/collection.module';
 import { PUBLIC_ROUTES } from 'src/common/utils/public.routes';
 import { CartModule } from './cart/cart.module';
+import { AddressModule } from './address/address.module';
 
 @Module({
-  imports: [AuthModule, CollectionModule, ProductModule, CartModule],
+  imports: [AuthModule, CollectionModule, ProductModule, CartModule, AddressModule],
 })
 export class IndexModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
