@@ -7,11 +7,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import {
-  VerifyPaymentDto,
-  CreatePaymentDto,
-  RefundPaymentDto,
-} from './dto/payment.dto';
+import { VerifyPaymentDto } from './dto/payment.dto';
 import { CurrentUser } from 'src/common/decorator/user.decorator';
 import type { AuthUser } from 'src/common/types';
 
@@ -20,8 +16,8 @@ export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   @Post('verify')
-  verify(@Body() dto: VerifyPaymentDto) {
-    return this.paymentService.verifyAndConfirm(dto);
+  verify(@Body() dto: VerifyPaymentDto, @CurrentUser() user: AuthUser) {
+    return this.paymentService.verifyAndConfirm(dto, user.id);
   }
 
   @Get('orders/:orderId')
@@ -43,9 +39,8 @@ export class PaymentController {
   @Post('orders/:orderId/create')
   createOrder(
     @Param('orderId', ParseIntPipe) orderId: number,
-    @Body() body: { amount: number },
     @CurrentUser() user: AuthUser,
   ) {
-    return this.paymentService.createOrder(orderId, body.amount);
+    return this.paymentService.createOrder(orderId, user.id);
   }
 }
