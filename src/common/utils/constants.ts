@@ -11,7 +11,7 @@ const MESSAGES = {
     ACCOUNT_ALREADY_VERIFIED: 'Account is already verified',
     ACCOUNT_VERIFIED: 'Account verified successfully',
     ORDER_CREATED: 'Order created successfully',
-  
+    
   },
   ERROR_MSG: {
     JSON_WEB_TOKEN_ERROR: 'JsonWebTokenError',
@@ -30,6 +30,7 @@ const MESSAGES = {
 
     RECORD_NOT_FOUND: 'Record not found',
     PAYMENT_VERIFICATION_FAILED: 'Payment verification failed',
+    MIN_PAYMENT_AMOUNT: 'Minimum payable amount is Rs 1.00',
   },
 } as const;
 

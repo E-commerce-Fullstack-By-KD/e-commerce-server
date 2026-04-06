@@ -10,11 +10,6 @@ export const PUBLIC_ROUTES: RouteInfo[] = [
     path: 'auth/signup',
     method: RequestMethod.POST,
   },
-
-  {
-    path: 'auth/login',
-    method: RequestMethod.POST,
-  },
   {
     path: 'uploads/*path',
     method: RequestMethod.GET,
@@ -30,9 +25,5 @@ export const PUBLIC_ROUTES: RouteInfo[] = [
   {
     path: 'collection/findAll',
     method: RequestMethod.GET,
-  },
-  {
-    path: 'payments/verify',
-    method: RequestMethod.POST,
   },
 ];

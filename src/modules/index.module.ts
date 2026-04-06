@@ -10,7 +10,15 @@ import { PaymentModule } from './payment/payment.module';
 import { OrderModule } from './order/order.module';
 
 @Module({
-  imports: [AuthModule, CollectionModule, ProductModule, CartModule, AddressModule, PaymentModule, OrderModule],
+  imports: [
+    AuthModule,
+    CollectionModule,
+    ProductModule,
+    CartModule,
+    AddressModule,
+    PaymentModule,
+    OrderModule,
+  ],
 })
 export class IndexModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

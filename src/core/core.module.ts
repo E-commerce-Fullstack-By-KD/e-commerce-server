@@ -5,11 +5,6 @@ import { JwtModule } from './jwt/jwt.module';
 import { UploadModuleModule } from './upload-module/upload-module.module';
 
 @Module({
-  imports: [
-    DatabaseModule,
-    JwtModule,
-    MailerModule,
-    UploadModuleModule,
-  ],
+  imports: [DatabaseModule, JwtModule, MailerModule, UploadModuleModule],
 })
 export class CoreModule {}

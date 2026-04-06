@@ -1,5 +1,5 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { Repository, In } from 'typeorm';
+import { Injectable, Inject, HttpStatus } from '@nestjs/common';
+import { Repository } from 'typeorm';
 import { OrmService } from 'src/core/database/database.service';
 import {
   Order,
@@ -70,8 +70,19 @@ export class OrderService {
           `Insufficient stock for product: ${item.product.name}`,
         );
       }
-      const price = item.product.offer_price ?? item.product.list_price;
+      const price = this.getEffectiveProductPrice(
+        item.product.list_price,
+        item.product.offer_price,
+      );
       totalAmount += price * item.quantity;
+    }
+
+    const amountInPaise = Math.round(totalAmount * 100);
+    if (!Number.isFinite(amountInPaise) || amountInPaise < 100) {
+      throw new CustomException(
+        ERROR_MSG.MIN_PAYMENT_AMOUNT,
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     // Create order
@@ -87,7 +98,10 @@ export class OrderService {
 
     // Create order items
     for (const cartItem of cartItems) {
-      const price = cartItem.product.offer_price ?? cartItem.product.list_price;
+      const price = this.getEffectiveProductPrice(
+        cartItem.product.list_price,
+        cartItem.product.offer_price,
+      );
       const orderItem = this.orderItemRepo.create({
         order: savedOrder,
         product: cartItem.product,
@@ -100,7 +114,7 @@ export class OrderService {
 
     // Create Razorpay order
     const rzpOrder = await this.rzpClient.orders.create({
-      amount: Math.round(totalAmount * 100), // Razorpay expects amount in paise
+      amount: amountInPaise,
       currency: 'INR',
       receipt: `order_${savedOrder.id}`,
     });
@@ -121,6 +135,7 @@ export class OrderService {
         id: savedOrder.id,
         total_amount: savedOrder.total_amount,
         razorpay_order_id: rzpOrder.id,
+        razorpay_key_id: process.env.RAZORPAY_KEY_ID || '',
       },
     });
   }
@@ -198,5 +213,15 @@ export class OrderService {
     });
     if (!order) throw new CustomException(ERROR_MSG.RECORD_NOT_FOUND);
     return order;
+  }
+
+  private getEffectiveProductPrice(
+    listPrice: number,
+    offerPrice?: number | null,
+  ) {
+    if (offerPrice != null && offerPrice > 0 && offerPrice < listPrice) {
+      return offerPrice;
+    }
+    return listPrice;
   }
 }

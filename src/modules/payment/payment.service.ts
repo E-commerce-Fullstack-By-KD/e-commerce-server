@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, HttpStatus } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { Repository } from 'typeorm';
 import { OrmService } from 'src/core/database/database.service';
@@ -30,29 +30,105 @@ export class PaymentService {
     this.cartRepo = this.ormService.getRepo(Cart);
   }
 
-  async createOrder(orderId: number, amount: number) {
-    try {
-      const order = await this.orderRepo.findOne({ where: { id: orderId } });
-      if (!order) throw new CustomException(ERROR_MSG.RECORD_NOT_FOUND);
+  async createOrder(orderId: number, userId: number) {
+    const order = await this.orderRepo.findOne({
+      where: { id: orderId, user: { id: userId } },
+      relations: ['payment'],
+    });
 
-      const rzpOrder = await this.rzpClient.orders.create({
-        amount: Math.round(amount * 100), // Razorpay expects amount in paise
-        currency: 'INR',
-        receipt: `order_${orderId}`,
-      });
+    if (!order) throw new CustomException(ERROR_MSG.RECORD_NOT_FOUND);
 
-      return successResponseWithResult(SUCCESS_MSG.CREATED, {
-        razorpay_order_id: rzpOrder.id,
-        amount: amount,
-        currency: 'INR',
-      });
-    } catch (error) {
-      if (error instanceof CustomException) throw error;
-      throw new CustomException(ERROR_MSG.INTERNAL_SERVER_ERROR);
+    if (order.status === OrderStatus.CANCELLED) {
+      throw new CustomException(
+        'Cannot create payment for a cancelled order',
+        HttpStatus.BAD_REQUEST,
+      );
     }
+
+    if (order.payment?.status === PaymentStatus.PAID) {
+      throw new CustomException(
+        'Order is already paid',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (
+      order.payment?.status === PaymentStatus.PENDING &&
+      order.payment.razorpay_order_id
+    ) {
+      return successResponseWithResult(SUCCESS_MSG.CREATED, {
+        order_id: order.id,
+        razorpay_order_id: order.payment.razorpay_order_id,
+        amount: Number(order.total_amount),
+        currency: order.payment.currency,
+      });
+    }
+
+    const amount = Number(order.total_amount);
+    const amountInPaise = Math.round(amount * 100);
+    if (!Number.isFinite(amountInPaise) || amountInPaise < 100) {
+      throw new CustomException(
+        ERROR_MSG.MIN_PAYMENT_AMOUNT,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const rzpOrder = await this.rzpClient.orders.create({
+      amount: amountInPaise,
+      currency: 'INR',
+      receipt: `order_${orderId}`,
+    });
+
+    if (order.payment) {
+      order.payment.razorpay_order_id = rzpOrder.id;
+      order.payment.razorpay_payment_id = '';
+      order.payment.razorpay_signature = '';
+      order.payment.amount = amount;
+      order.payment.currency = 'INR';
+      order.payment.status = PaymentStatus.PENDING;
+      await this.paymentRepo.save(order.payment);
+    } else {
+      const payment = this.paymentRepo.create({
+        order,
+        razorpay_order_id: rzpOrder.id,
+        amount,
+        currency: 'INR',
+        status: PaymentStatus.PENDING,
+      });
+      await this.paymentRepo.save(payment);
+    }
+
+    return successResponseWithResult(SUCCESS_MSG.CREATED, {
+      order_id: order.id,
+      razorpay_order_id: rzpOrder.id,
+      amount,
+      currency: 'INR',
+    });
   }
 
-  async verifyAndConfirm(dto: VerifyPaymentDto) {
+  async verifyAndConfirm(dto: VerifyPaymentDto, userId: number) {
+    const payment = await this.paymentRepo.findOne({
+      where: { order: { id: dto.order_id, user: { id: userId } } },
+      relations: ['order', 'order.user'],
+    });
+
+    if (!payment) throw new CustomException(ERROR_MSG.RECORD_NOT_FOUND);
+
+    if (payment.status === PaymentStatus.PAID) {
+      return successResponse(SUCCESS_MSG.UPDATED);
+    }
+
+    if (payment.order.status === OrderStatus.CANCELLED) {
+      throw new CustomException(
+        'Cannot verify payment for a cancelled order',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (payment.razorpay_order_id !== dto.razorpay_order_id) {
+      throw new CustomException(ERROR_MSG.PAYMENT_VERIFICATION_FAILED);
+    }
+
     // Verify HMAC signature
     const body = `${dto.razorpay_order_id}|${dto.razorpay_payment_id}`;
     const secret = process.env.RAZORPAY_KEY_SECRET;
@@ -69,14 +145,6 @@ export class PaymentService {
     if (expected !== dto.razorpay_signature) {
       throw new CustomException(ERROR_MSG.PAYMENT_VERIFICATION_FAILED);
     }
-
-    // Find payment record
-    const payment = await this.paymentRepo.findOne({
-      where: { order: { id: dto.order_id } },
-      relations: ['order', 'order.user'],
-    });
-
-    if (!payment) throw new CustomException(ERROR_MSG.RECORD_NOT_FOUND);
 
     // Update payment status
     payment.razorpay_payment_id = dto.razorpay_payment_id;
@@ -156,7 +224,7 @@ export class PaymentService {
       });
 
       return successResponse(SUCCESS_MSG.UPDATED);
-    } catch (error) {
+    } catch {
       throw new CustomException(ERROR_MSG.INTERNAL_SERVER_ERROR);
     }
   }
