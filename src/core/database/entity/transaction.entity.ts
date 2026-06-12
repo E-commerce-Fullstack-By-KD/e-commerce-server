@@ -11,24 +11,24 @@ const decimalToNumber = {
 @Entity('payments')
 export class Payment extends AbstractEntityClass {
   @Column({ unique: true })
-  razorpay_order_id: string;
+  razorpay_order_id!: string;
 
   @Column({ nullable: true })
-  razorpay_payment_id: string;
+  razorpay_payment_id!: string;
 
   @Column({ nullable: true })
-  razorpay_signature: string;
+  razorpay_signature!: string;
 
   @Column('decimal', { precision: 10, scale: 2, transformer: decimalToNumber })
-  amount: number;
+  amount!: number;
 
   @Column({ default: 'INR' })
-  currency: string;
+  currency!: string;
 
   @Column({ type: 'enum', enum: PaymentStatus, default: PaymentStatus.PENDING })
-  status: PaymentStatus;
+  status!: PaymentStatus;
 
   @OneToOne(() => Order, (order) => order.payment, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
-  order: Order;
+  order!: Order;
 }

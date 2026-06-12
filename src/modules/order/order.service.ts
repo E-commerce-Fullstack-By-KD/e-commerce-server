@@ -19,6 +19,7 @@ import { CustomException } from 'src/common/exceptions/custom.exception';
 import { OrderStatus, PaymentStatus } from 'src/common/enum';
 import { CreateOrderDto, UpdateOrderDto } from './dto/order.dto';
 import Razorpay from 'razorpay';
+import { RedisService } from 'src/core/redis/redis.service';
 
 @Injectable()
 export class OrderService {
@@ -26,18 +27,17 @@ export class OrderService {
   private cartRepo: Repository<Cart>;
   private addressRepo: Repository<Address>;
   private paymentRepo: Repository<Payment>;
-  private productRepo: Repository<Product>;
   private orderItemRepo: Repository<OrderItem>;
 
   constructor(
     private ormService: OrmService,
+    private redisService: RedisService,
     @Inject('RzpToken') private rzpClient: Razorpay,
   ) {
     this.orderRepo = this.ormService.getRepo(Order);
     this.cartRepo = this.ormService.getRepo(Cart);
     this.addressRepo = this.ormService.getRepo(Address);
     this.paymentRepo = this.ormService.getRepo(Payment);
-    this.productRepo = this.ormService.getRepo(Product);
     this.orderItemRepo = this.ormService.getRepo(OrderItem);
   }
 
@@ -62,14 +62,29 @@ export class OrderService {
       throw new CustomException('No items in cart');
     }
 
-    // Calculate total amount and validate stock
-    let totalAmount = 0;
+    // Merge duplicate cart rows by product to keep one reservation key per product.
+    const itemByProduct = new Map<
+      number,
+      { product: Product; quantity: number }
+    >();
     for (const item of cartItems) {
-      if (item.product.stock < item.quantity) {
-        throw new CustomException(
-          `Insufficient stock for product: ${item.product.name}`,
-        );
+      const productId = item.product.id;
+      const existing = itemByProduct.get(productId);
+      if (existing) {
+        existing.quantity += item.quantity;
+      } else {
+        itemByProduct.set(productId, {
+          product: item.product,
+          quantity: item.quantity,
+        });
       }
+    }
+
+    const mergedItems = Array.from(itemByProduct.values());
+
+    // Calculate total amount
+    let totalAmount = 0;
+    for (const item of mergedItems) {
       const price = this.getEffectiveProductPrice(
         item.product.list_price,
         item.product.offer_price,
@@ -96,48 +111,106 @@ export class OrderService {
 
     const savedOrder = await this.orderRepo.save(order);
 
-    // Create order items
-    for (const cartItem of cartItems) {
-      const price = this.getEffectiveProductPrice(
-        cartItem.product.list_price,
-        cartItem.product.offer_price,
-      );
-      const orderItem = this.orderItemRepo.create({
-        order: savedOrder,
-        product: cartItem.product,
-        quantity: cartItem.quantity,
-        unit_price: price,
-        total_price: price * cartItem.quantity,
+    const reservedItems: Array<{
+      productId: number;
+      qty: number;
+      reservationId: string;
+    }> = [];
+
+    try {
+      for (const item of mergedItems) {
+        const reservationId = this.buildReservationId(
+          savedOrder.id,
+          item.product.id,
+        );
+
+        await this.redisService.seedIfAbsent(
+          String(item.product.id),
+          item.product.stock,
+        );
+
+        const reserveResult = await this.redisService.reserveStock(
+          String(item.product.id),
+          item.quantity,
+          reservationId,
+        );
+        console.log(reserveResult,"reserveResult")
+
+        if (
+          !reserveResult.ok ||
+          !['RESERVED', 'ALREADY_RESERVED'].includes(reserveResult.code)
+        ) {
+          throw new CustomException(
+            `Insufficient stock for product: ${item.product.name}`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
+        reservedItems.push({
+          productId: item.product.id,
+          qty: item.quantity,
+          reservationId,
+        });
+      }
+
+      // Create order items
+      for (const item of mergedItems) {
+        const price = this.getEffectiveProductPrice(
+          item.product.list_price,
+          item.product.offer_price,
+        );
+        const orderItem = this.orderItemRepo.create({
+          order: savedOrder,
+          product: item.product,
+          quantity: item.quantity,
+          unit_price: price,
+          total_price: price * item.quantity,
+        });
+        await this.orderItemRepo.save(orderItem);
+      }
+
+      // Create Razorpay order
+      const rzpOrder = await this.rzpClient.orders.create({
+        amount: amountInPaise,
+        currency: 'INR',
+        receipt: `order_${savedOrder.id}`,
       });
-      await this.orderItemRepo.save(orderItem);
-    }
 
-    // Create Razorpay order
-    const rzpOrder = await this.rzpClient.orders.create({
-      amount: amountInPaise,
-      currency: 'INR',
-      receipt: `order_${savedOrder.id}`,
-    });
-
-    // Create payment record
-    const payment = this.paymentRepo.create({
-      order: savedOrder,
-      razorpay_order_id: rzpOrder.id,
-      amount: totalAmount,
-      currency: 'INR',
-      status: PaymentStatus.PENDING,
-    });
-
-    await this.paymentRepo.save(payment);
-
-    return successResponseWithResult(SUCCESS_MSG.ORDER_CREATED, {
-      order: {
-        id: savedOrder.id,
-        total_amount: savedOrder.total_amount,
+      // Create payment record
+      const payment = this.paymentRepo.create({
+        order: savedOrder,
         razorpay_order_id: rzpOrder.id,
-        razorpay_key_id: process.env.RAZORPAY_KEY_ID || '',
-      },
-    });
+        amount: totalAmount,
+        currency: 'INR',
+        status: PaymentStatus.PENDING,
+      });
+
+      await this.paymentRepo.save(payment);
+
+      return successResponseWithResult(SUCCESS_MSG.ORDER_CREATED, {
+        order: {
+          id: savedOrder.id,
+          total_amount: savedOrder.total_amount,
+          razorpay_order_id: rzpOrder.id,
+          razorpay_key_id: process.env.RAZORPAY_KEY_ID || '',
+        },
+      });
+    } catch (error) {
+      for (const item of reservedItems) {
+        await this.redisService.releaseReservation(
+          String(item.productId),
+          item.qty,
+          item.reservationId,
+        );
+      }
+
+      await this.orderRepo.delete(savedOrder.id);
+
+      if (error instanceof CustomException) {
+        throw error;
+      }
+      throw new CustomException(ERROR_MSG.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async findAll(userId: number) {
@@ -188,6 +261,21 @@ export class OrderService {
       throw new CustomException('Cannot cancel paid orders');
     }
 
+    for (const item of order.items) {
+      if (!item.product) continue;
+      const reservationId = this.buildReservationId(order.id, item.product.id);
+      await this.redisService.releaseReservation(
+        String(item.product.id),
+        item.quantity,
+        reservationId,
+      );
+    }
+
+    if (payment && payment.status === PaymentStatus.PENDING) {
+      payment.status = PaymentStatus.FAILED;
+      await this.paymentRepo.save(payment);
+    }
+
     order.status = OrderStatus.CANCELLED;
     await this.orderRepo.save(order);
 
@@ -223,5 +311,9 @@ export class OrderService {
       return offerPrice;
     }
     return listPrice;
+  }
+
+  private buildReservationId(orderId: number, productId: number) {
+    return `order:${orderId}:product:${productId}`;
   }
 }

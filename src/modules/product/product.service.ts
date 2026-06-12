@@ -12,13 +12,17 @@ import {
   successResponse,
   successResponseWithResult,
 } from 'src/common/utils/helper';
+import { RedisService } from 'src/core/redis/redis.service';
 
 @Injectable()
 export class ProductService {
   private productRepository: Repository<Product>;
   private collectionRepo: Repository<Collection>;
 
-  constructor(private ormService: OrmService) {
+  constructor(
+    private ormService: OrmService,
+    private redisService: RedisService,
+  ) {
     this.productRepository = this.ormService.getRepo(Product);
     this.collectionRepo = this.ormService.getRepo(Collection);
   }
@@ -45,6 +49,9 @@ export class ProductService {
     });
 
     const saved = await this.productRepository.save(product);
+
+    await this.redisService.seedInventory(String(saved.id), saved.stock);
+
     return successResponseWithResult(SUCCESS_MSG.CREATED, { product: saved });
   }
 
@@ -77,6 +84,9 @@ export class ProductService {
 
     Object.assign(product, updateProductDto);
     const saved = await this.productRepository.save(product);
+
+    await this.redisService.seedInventory(String(saved.id), saved.stock);
+
     return successResponseWithResult(SUCCESS_MSG.UPDATED, { product: saved });
   }
 

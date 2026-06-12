@@ -5,20 +5,20 @@ import { UserRole } from 'src/common/enum';
 @Entity()
 export class User extends AbstractEntityClass {
   @Column()
-  name: string;
+  name!: string;
 
   @Column({ unique: true })
-  email: string;
+  email!: string;
 
   @Column({ select: false })
-  password: string;
+  password!: string;
 
   @Column({ default: false })
-  is_verified: boolean;
+  is_verified!: boolean;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
-  role: UserRole;
+  role!: UserRole;
 
   @Column({ default: false })
-  is_deleted: boolean;
+  is_deleted!: boolean;
 }

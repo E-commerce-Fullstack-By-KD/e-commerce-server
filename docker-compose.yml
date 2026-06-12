@@ -10,6 +10,16 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_DB: ecommerce_fullstack
     ports:
-      - "5434:5432"
+      - '5434:5432'
     volumes:
       - ./postgres_data:/var/lib/postgresql
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - '6380:6379'
+    volumes:
+      - ./redis_data:/data
+    command: ['redis-server', '--appendonly', 'yes']

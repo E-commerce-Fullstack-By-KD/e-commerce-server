@@ -12,18 +12,18 @@ const decimalToNumber = {
 export class OrderItem extends AbstractEntityClass {
   @ManyToOne(() => Order, (order) => order.items, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'order_id' })
-  order: Order;
+  order!: Order;
 
   @ManyToOne(() => Product, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'product_id' })
-  product: Product;
+  product!: Product;
 
   @Column()
-  quantity: number;
+  quantity!: number;
 
   @Column('decimal', { precision: 10, scale: 2, transformer: decimalToNumber })
-  unit_price: number;
+  unit_price!: number;
 
   @Column('decimal', { precision: 10, scale: 2, transformer: decimalToNumber })
-  total_price: number;
+  total_price!: number;
 }

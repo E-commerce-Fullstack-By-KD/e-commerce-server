@@ -21,19 +21,19 @@ const decimalToNumber = {
 @Entity()
 export class Product extends AbstractEntityClass {
   @Column()
-  name: string;
+  name!: string;
 
   @Column({ unique: true })
-  sku: string;
+  sku!: string;
 
   @Column({ nullable: true })
-  description: string;
+  description!: string;
 
   @Column('text', { array: true, nullable: true })
-  image_url: string[];
+  image_url!: string[];
 
   @Column('decimal', { precision: 10, scale: 2, transformer: decimalToNumber })
-  list_price: number;
+  list_price!: number;
 
   @Column('decimal', {
     precision: 10,
@@ -41,20 +41,20 @@ export class Product extends AbstractEntityClass {
     nullable: true,
     transformer: decimalToNumber,
   })
-  offer_price: number | null;
+  offer_price!: number | null;
 
   @Column({
     type: 'enum',
     enum: ProductStatus,
     default: ProductStatus.DRAFT,
   })
-  status: ProductStatus;
+  status!: ProductStatus;
 
   @Column({ default: 0 })
-  stock: number;
+  stock!: number;
 
   @Column({ default: false })
-  is_deleted: boolean;
+  is_deleted!: boolean;
 
   /**
    * The admin user who created this product.
@@ -62,7 +62,7 @@ export class Product extends AbstractEntityClass {
    */
   @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  created_by: User;
+  created_by!: User;
 
   /**
    * Many-to-many with Collection.
@@ -78,5 +78,5 @@ export class Product extends AbstractEntityClass {
     joinColumn: { name: 'product_id', referencedColumnName: 'id' },
     inverseJoinColumn: { name: 'collection_id', referencedColumnName: 'id' },
   })
-  collections: Collection[];
+  collections!: Collection[];
 }
