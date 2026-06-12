@@ -5,33 +5,33 @@ import { User } from './user.entity';
 @Entity('addresses')
 export class Address extends AbstractEntityClass {
   @Column()
-  full_name: string;
+  full_name!: string;
 
   @Column()
-  phone: string;
+  phone!: string;
 
   @Column()
-  address_line_1: string;
+  address_line_1!: string;
 
   @Column({ nullable: true })
-  address_line_2: string;
+  address_line_2!: string;
 
   @Column()
-  city: string;
+  city!: string;
 
   @Column()
-  state: string;
+  state!: string;
 
   @Column()
-  country: string;
+  country!: string;
 
   @Column()
-  postal_code: string;
+  postal_code!: string;
 
   @Column({ default: false })
-  is_default: boolean;
+  is_default!: boolean;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user!: User;
 }
